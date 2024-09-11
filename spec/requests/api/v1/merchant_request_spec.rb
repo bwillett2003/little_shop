@@ -25,4 +25,20 @@ RSpec.describe "Merchants" do
       expect(attributes[:name]).to be_a(String)
     end
   end
+
+  it "can get one merchant" do
+    walmart = Merchant.create!(name: "Walmart")
+    Merchant.create!(name: "Target")
+    Merchant.create!(name: "Sam's")
+
+    get "/api/v1/merchants/#{walmart.id}"
+
+    expect(response).to be_successful
+
+    merchant = JSON.parse(response.body, symbolize_names: true)
+    
+    expect(merchant[:data]).to have_key(:id)
+    expect(merchant[:data][:id]).to eq(walmart.id.to_s)
+    expect(merchant[:data][:attributes][:name]).to eq(walmart.name)
+  end
 end
