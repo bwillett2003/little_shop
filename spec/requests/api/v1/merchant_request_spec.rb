@@ -25,4 +25,31 @@ RSpec.describe "Merchants" do
       expect(attributes[:name]).to be_a(String)
     end
   end
+
+  it "returns a list of all items for a single merchant" do
+    walmart = Merchant.create!(name: "Walmart")
+    target = Merchant.create!(name: "Target")
+    sams = Merchant.create!(name: "Sams")
+
+    Item.create!(name: "Hat", description: "Bucket", unit_price: 1.99, merchant: walmart)
+    Item.create!(name: "Shoes", description: "Pink and sparkly", unit_price: 5.00, merchant: walmart)
+    Item.create!(name: "Bananas", description: "X-Large bunch", unit_price: 0.99, merchant: sams)
+
+    get "/api/v1/merchants/#{target.id}/items"
+    expect(response).to be_successful
+
+    items = JSON.parse(response.body, symbolize_names: true)
+    
+    expect(items[:data].count).to eq(2)
+
+      items[:data].each do |item|
+        expect(item).to have_key(:id)
+        expect(item[:attributes]).to have_key(:name)
+        expect(item[:attributes]).to have_key(:description)
+        expect(item[:attributes]).to have_key(:unit_price)
+      end
+  end
+
+
+
 end
