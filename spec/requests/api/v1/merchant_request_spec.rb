@@ -41,4 +41,19 @@ RSpec.describe "Merchants" do
     expect(merchant[:data][:id]).to eq(walmart.id.to_s)
     expect(merchant[:data][:attributes][:name]).to eq(walmart.name)
   end
+
+  it "sad path for not finding one merchant" do
+    Merchant.create!(name: "Target")
+    Merchant.create!(name: "Sam's")
+    walmart = Merchant.create!(name: "Walmart")
+
+    get "/api/v1/merchants/#{walmart.id + 1}"
+
+    expect(response).to have_http_status(:not_found)
+
+    merchant = JSON.parse(response.body, symbolize_names: true)
+
+    expect(merchant[:errors][0][:status]).to eq("404")
+    expect(merchant[:errors][0][:message]).to eq("Record not found.")
+  end
 end
