@@ -61,4 +61,25 @@ RSpec.describe "Merchants" do
       expect(merchant[:errors][0][:message]).to eq("Record not found.")
     end
   end
+
+  describe "Update action" do
+    it "update an existing merchant" do
+      
+      merchant = Merchant.create!(name: "Walmart")
+      previous_name = merchant.name
+      
+      merchant_params = {name: "Wally World"}
+      
+      headers = {"CONTENT_TYPE" => "application/json"}
+      
+      patch "/api/v1/merchants/#{merchant.id}", headers: headers, params: JSON.generate({merchant: merchant_params})
+      
+      updated_merchant = Merchant.find(merchant.id)
+
+      expect(response).to be_successful
+      
+      expect(updated_merchant.name).to_not eq(previous_name)
+      expect(updated_merchant.name).to eq("Wally World")
+    end
+  end
 end
