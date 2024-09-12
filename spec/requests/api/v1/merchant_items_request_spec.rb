@@ -29,7 +29,7 @@ RSpec.describe "Merchant Items" do
         end
     end
 
-    it "returns a 404 if merchant is not found" do
+    it "returns a 404 message if merchant is not found" do
       
       get "/api/v1/merchants/#{1234567890}/items"
       expect(response).to have_http_status(404)
