@@ -1,9 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe "Merchants" do
-
   describe "index" do
-    
     it "gets a list of all merchants" do
       Merchant.create!(name: "Walmart")
       Merchant.create!(name: "Target")
@@ -30,8 +28,8 @@ RSpec.describe "Merchants" do
     end
   end
 
-  describe "show" do
 
+    describe "show" do
     it "can get one merchant" do
       walmart = Merchant.create!(name: "Walmart")
       Merchant.create!(name: "Target")
