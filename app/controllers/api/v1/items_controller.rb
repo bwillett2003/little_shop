@@ -2,9 +2,23 @@ class Api::V1::ItemsController < ApplicationController
   def create
     begin
       item = Item.create!(item_params)
-      render json: ItemsSerializer.new(item)
+      render json: ItemsSerializer.new(item), status: 201
     rescue ActiveRecord::RecordInvalid => errors
       render json: error_messages(errors.record.errors.full_messages, 422), status: 422
+    rescue ActionController::ParameterMissing => error
+      error_message = [error.message]
+      render json: error_messages(error_message, 422), status: 422
+    end
+  end
+
+  def destroy
+    begin
+      item = Item.find(params[:id])
+      item.destroy
+      head :no_content
+    rescue ActiveRecord::RecordNotFound => error
+      error_message = [error.message]
+      render json: error_messages(error_message, 404), status: 404
     end
   end
 
