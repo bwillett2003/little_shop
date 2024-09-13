@@ -29,7 +29,7 @@ RSpec.describe "Merchants" do
   end
 
 
-    describe "show" do
+  describe "show" do
     it "can get one merchant" do
       walmart = Merchant.create!(name: "Walmart")
       Merchant.create!(name: "Target")
@@ -80,6 +80,22 @@ RSpec.describe "Merchants" do
       
       expect(updated_merchant.name).to_not eq(previous_name)
       expect(updated_merchant.name).to eq("Wally World")
+    end
+
+    it "sad path for not being able to update a merchant" do
+    
+      merchant = Merchant.create!(name: "Walmart")
+      
+      invalid_merchant = {name: ""}
+      headers = {"CONTENT_TYPE" => "application/json"}
+      
+      patch "/api/v1/merchants/#{merchant.id}", headers: headers, params: JSON.generate({merchant: invalid_merchant})
+      
+      expect(response).to have_http_status(:unprocessable_entity)
+      
+      merchant = JSON.parse(response.body, symbolize_names: true)
+      
+      expect(merchant[:errors]).to include("Name can't be blank")
     end
   end
 end
