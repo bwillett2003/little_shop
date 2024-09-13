@@ -278,5 +278,4 @@ RSpec.describe "Merchants" do
       expect(merchant[:errors]).to include("Name can't be blank")
     end
   end
-
 end
