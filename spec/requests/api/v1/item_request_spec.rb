@@ -1,7 +1,6 @@
 require 'rails_helper'
 
 RSpec.describe "Items" do
-
   describe "index" do
     it "gets can fetch all the items" do
       merchant = Merchant.create!(name: "Walmart")
