@@ -45,7 +45,7 @@ RSpec.describe "Merchants" do
       expect(merchant[:data][:attributes][:name]).to eq(walmart.name)
     end
     
-    it "sad path for not finding one merchant" do
+    it "has a sad path for not finding one merchant" do
       Merchant.create!(name: "Target")
       Merchant.create!(name: "Sam's")
       walmart = Merchant.create!(name: "Walmart")
@@ -278,4 +278,5 @@ RSpec.describe "Merchants" do
       expect(merchant[:errors]).to include("Name can't be blank")
     end
   end
+
 end

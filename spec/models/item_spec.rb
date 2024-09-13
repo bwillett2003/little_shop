@@ -14,6 +14,7 @@ RSpec.describe Item do
     it {should validate_numericality_of(:unit_price)}
     it {should validate_presence_of(:merchant_id)}
     it {should validate_numericality_of(:merchant_id)}
+
   end
 
   describe "sort_price" do
