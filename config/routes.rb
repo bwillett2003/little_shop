@@ -9,11 +9,14 @@ Rails.application.routes.draw do
   # root "posts#index"
 
   get "/api/v1/merchants", to: "api/v1/merchants#index"
+  post "/api/v1/merchants", to: "api/v1/merchants#create"
+  delete "/api/v1/merchants/:id", to: "api/v1/merchants#destroy"
+
+  get "/api/v1/items", to: "api/v1/items#index"
 
   post "/api/v1/merchants", to: "api/v1/merchants#create"
   delete "/api/v1/merchants/:id", to: "api/v1/merchants#destroy"
   
-
   get "/api/v1/items/:id", to: "api/v1/items#show"
 
   get "/api/v1/merchants/:id/items", to: "api/v1/merchant_items#index"

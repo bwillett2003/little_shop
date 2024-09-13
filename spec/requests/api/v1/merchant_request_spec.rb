@@ -77,6 +77,13 @@ RSpec.describe "Merchants" do
 
   #     expect(response).to be_successful
       
+      
+  #     patch "/api/v1/merchants/#{merchant.id}", headers: headers, params: JSON.generate({merchant: merchant_params})
+      
+  #     updated_merchant = Merchant.find(merchant.id)
+
+  #     expect(response).to be_successful
+      
   #     expect(updated_merchant.name).to_not eq(previous_name)
   #     expect(updated_merchant.name).to eq("Wally World")
   #     end
@@ -118,6 +125,15 @@ RSpec.describe "Merchants" do
       headers = { "CONTENT_TYPE" => "application/json" }
       post "/api/v1/merchants", headers: headers, params: JSON.generate(bad_merchant_params)
 
+      
+      expect(response).to_not be_successful
+      expect(response.status).to eq(422)
+
+      errors_data = JSON.parse(response.body, symbolize_names: true)
+      error = errors_data[:errors]
+
+      expect(error[0][:message]).to eq("param is missing or the value is empty: merchant")
+      expect(error[0][:status]).to eq(422)
       
       expect(response).to_not be_successful
       expect(response.status).to eq(422)
@@ -192,11 +208,63 @@ RSpec.describe "Merchants" do
       
       expect(error[0][:message]).to eq("Couldn't find Merchant with 'id'=#{merchant.id + 1}")
       expect(error[0][:status]).to eq(404)
+
     end
 
-    it "sad path for not being able to update a merchant" do
-    
+    it "can handle sad paths for requests with missing wrong params" do
+      bad_merchant_params = {name: ""}
+
+      headers = { "CONTENT_TYPE" => "application/json" }
+      post "/api/v1/merchants", headers: headers, params: JSON.generate(bad_merchant_params)
+
+
+      expect(response).to_not be_successful
+      expect(response.status).to eq(422)
+
+      errors_data = JSON.parse(response.body, symbolize_names: true)
+      error = errors_data[:errors]
+      
+      expect(error[0][:message]).to eq("Name can't be blank")
+      expect(error[0][:status]).to eq(422)
+    end
+  end
+
+  describe "delete" do
+    it "will delete a merchant and all items associated with the merchant" do
       merchant = Merchant.create!(name: "Walmart")
+      item_1 = Item.create!(
+        name: "Item Rerum Magni",
+        description: "Iusto ratione illum. Adipisci est perspiciatis temporibus. Ducimus id dolorem voluptas eligendi repellat iure sit.",
+        unit_price: 130.46,
+        merchant_id: merchant.id
+      )
+
+      item_2 = Item.create!(
+        name: "Item Et Cumque",
+        description: "Ducimus id perferendis. Libero ullam odit aut quisquam non. Rem eaque distinctio quos. Eaque nihil odit.",
+        unit_price: 130.46,
+        merchant_id: merchant.id
+      )
+
+      expect(Merchant.count).to eq(1)
+      expect(Item.count).to eq(2)
+
+      delete "/api/v1/merchants/#{merchant.id}"
+
+      expect(response).to be_successful
+
+      expect(Merchant.count).to eq(0)
+      expect{Merchant.find(merchant.id) }.to raise_error(ActiveRecord::RecordNotFound)
+
+      expect(Item.count).to eq(0)
+      expect{Item.find(item_1.id) }.to raise_error(ActiveRecord::RecordNotFound)
+      expect{Item.find(item_2.id) }.to raise_error(ActiveRecord::RecordNotFound)
+    end
+  
+    it "will can handle sad paths for merchants that don't exist" do
+      merchant = Merchant.create!(name: "Walmart")
+      previous_name = merchant.name
+    
       
       invalid_merchant = {name: ""}
       headers = {"CONTENT_TYPE" => "application/json"}
