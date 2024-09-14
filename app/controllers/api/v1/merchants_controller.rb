@@ -2,7 +2,7 @@ class Api::V1::MerchantsController < ApplicationController
   def index
     merchants = Merchant.all
                             .sort_direction(params[:sorted])
-    render json: MerchantsSerializer.new(merchants, params: request.query_parameters).serializable_hash
+    render json: MerchantsSerializer.new(merchants, params: request.query_parameters)
   end
 
   def show

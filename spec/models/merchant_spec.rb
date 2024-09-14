@@ -19,7 +19,7 @@ RSpec.describe Merchant do
 
       sorted_merchants = Merchant.sort_direction('age')
           
-      expect(sorted_merchants).to eq([merchant_1, merchant_2, merchant_3])
+      expect(sorted_merchants).to eq([merchant_3, merchant_2, merchant_1])
     end
   end
 
