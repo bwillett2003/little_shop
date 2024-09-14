@@ -74,13 +74,6 @@ RSpec.describe "Merchants" do
       
       updated_merchant = Merchant.find(merchant.id)
 
-  #     expect(response).to be_successful
-      
-      
-  #     patch "/api/v1/merchants/#{merchant.id}", headers: headers, params: JSON.generate({merchant: merchant_params})
-      
-  #     updated_merchant = Merchant.find(merchant.id)
-
       expect(response).to be_successful
       
       expect(updated_merchant.name).to_not eq(previous_name)
