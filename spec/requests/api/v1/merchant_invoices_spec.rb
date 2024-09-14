@@ -8,9 +8,9 @@ RSpec.describe "Merchant Invoices" do
       
       customer = Customer.create!(first_name: "Michael", last_name: "Jackson")
 
-      invoice_1 = Invoice.create!(customter: customer, merchant: walmart, status: "packaged")
-      invoice_2 = Invoice.create!(customter: customer, merchant: walmart, status: "shipped")
-      invoice_3 = Invoice.create!(customter: customer, merchant: walmart, status: "returned")
+      invoice_1 = Invoice.create!(customer: customer, merchant: walmart, status: "packaged")
+      invoice_2 = Invoice.create!(customer: customer, merchant: walmart, status: "shipped")
+      invoice_3 = Invoice.create!(customer: customer, merchant: walmart, status: "returned")
 
       get "/api/v1/merchants/#{walmart.id}/invoices"
       expect(response).to be_successful
@@ -27,8 +27,17 @@ RSpec.describe "Merchant Invoices" do
         expect(invoice).to have_key(:type)
         expect(invoice[:type]).to be_a(String)
         
-        expect(invoice).to have_key(:attributes)
-        expect(invoice[:attributes]).to be_a()
+        attributes = invoice[:attributes]
+        
+        expect(attributes).to have_key(:customer_id)
+        expect(attributes[:customer_id]).to be_an(Integer)
+
+        expect(attributes).to have_key(:merchant_id)
+        expect(attributes[:merchant_id]).to be_an(Integer)
+
+        expect(attributes).to have_key(:status)
+        expect(attributes[:status]).to be_a(String)
+      end
     end
   end
 end
