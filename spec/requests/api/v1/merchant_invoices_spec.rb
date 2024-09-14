@@ -39,5 +39,20 @@ RSpec.describe "Merchant Invoices" do
         expect(attributes[:status]).to be_a(String)
       end
     end
+
+    it "can return a merchants invoices filtered by status" do
+      walmart = Merchant.create!(name: "Walmart")
+      
+      customer = Customer.create!(first_name: "Michael", last_name: "Jackson")
+
+      invoice_1 = Invoice.create!(customer: customer, merchant: walmart, status: "packaged")
+      invoice_2 = Invoice.create!(customer: customer, merchant: walmart, status: "shipped")
+      invoice_3 = Invoice.create!(customer: customer, merchant: walmart, status: "returned")
+
+      get "/api/v1/merchants/#{walmart.id}/invoices?status=shipped"
+      expect(response).to be_successful
+
+
+    end
   end
 end
