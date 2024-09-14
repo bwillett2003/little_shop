@@ -78,6 +78,20 @@ RSpec.describe "Merchants" do
       
       expect(updated_merchant.name).to_not eq(previous_name)
       expect(updated_merchant.name).to eq("Wally World")
+    
+      merchants_data = JSON.parse(response.body, symbolize_names: true)
+      merchant = merchants_data[:data]
+
+      expect(merchant).to have_key(:id)
+      expect(merchant[:id]).to be_an(String)
+
+      expect(merchant).to have_key(:type)
+      expect(merchant[:type]).to be_an(String)
+
+      attributes = merchant[:attributes]
+
+      expect(attributes).to have_key(:name)
+      expect(attributes[:name]).to be_a(String)
     end
   end
 
