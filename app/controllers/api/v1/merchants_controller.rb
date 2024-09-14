@@ -1,6 +1,7 @@
 class Api::V1::MerchantsController < ApplicationController
   def index
     merchants = Merchant.all
+                            .sort_direction(params[:sort])
     render json: MerchantsSerializer.new(merchants)
   end
 

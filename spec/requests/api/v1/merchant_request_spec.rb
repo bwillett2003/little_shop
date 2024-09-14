@@ -26,6 +26,38 @@ RSpec.describe "Merchants" do
         expect(attributes[:name]).to be_a(String)
       end
     end
+    it "gets a list of all merchants in ascending order" do
+      Merchant.create!(name: "Sam's")
+      Merchant.create!(name: "Target")
+      Merchant.create!(name: "Walmart")
+      
+      get "/api/v1/merchants?sort=asc"
+      
+      expect(response).to be_successful
+      
+      merchants = JSON.parse(response.body, symbolize_names: true)
+  
+      expect(merchants[:data].count).to eq(3)
+    
+      expect(merchants[:data].first[:attributes][:name]).to eq("Sam's")
+      expect(merchants[:data].last[:attributes][:name]).to eq("Walmart")
+    end
+
+    it "gets a list of all merchants in descending order" do
+      Merchant.create!(name: "Walmart")
+      Merchant.create!(name: "Target")
+      Merchant.create!(name: "Sam's")
+
+      get "/api/v1/merchants?sort=desc"
+      
+      expect(response).to be_successful
+      
+      merchants = JSON.parse(response.body, symbolize_names: true)
+      expect(merchants[:data].count).to eq(3)
+    
+      expect(merchants[:data].first[:attributes][:name]).to eq("Sam's")
+      expect(merchants[:data].last[:attributes][:name]).to eq("Walmart")
+    end
   end
 
   describe "show" do
