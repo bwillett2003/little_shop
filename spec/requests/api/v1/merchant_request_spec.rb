@@ -26,40 +26,45 @@ RSpec.describe "Merchants" do
         expect(attributes[:name]).to be_a(String)
       end
     end
-    it "gets a list of all merchants in ascending order" do
+
+    it "lists newest merchants first descending order" do
       Merchant.create!(name: "Sam's")
       Merchant.create!(name: "Target")
       Merchant.create!(name: "Walmart")
       
-      get "/api/v1/merchants?sort=asc"
+      get "/api/v1/merchants?sorted=age"
       
       expect(response).to be_successful
       
       merchants = JSON.parse(response.body, symbolize_names: true)
   
       expect(merchants[:data].count).to eq(3)
-    
-      expect(merchants[:data].first[:attributes][:name]).to eq("Sam's")
-      expect(merchants[:data].last[:attributes][:name]).to eq("Walmart")
-    end
-
-    it "gets a list of all merchants in descending order" do
-      Merchant.create!(name: "Walmart")
-      Merchant.create!(name: "Target")
-      Merchant.create!(name: "Sam's")
-
-      get "/api/v1/merchants?sort=desc"
-      
-      expect(response).to be_successful
-      
-      merchants = JSON.parse(response.body, symbolize_names: true)
-      expect(merchants[:data].count).to eq(3)
-    
-      expect(merchants[:data].first[:attributes][:name]).to eq("Sam's")
-      expect(merchants[:data].last[:attributes][:name]).to eq("Walmart")
+ 
+      expect(merchants[:data].first[:attributes][:name]).to eq("Walmart")
+      expect(merchants[:data].last[:attributes][:name]).to eq("Sam's")
     end
   end
 
+  describe 'Item count' do
+    it "returns merchants with item_count when count=true" do
+      merchant_1 = Merchant.create!(name: "Walmart")
+      merchant_2 = Merchant.create!(name: "Target")
+  
+      merchant_1.items.create!(name: "Golden Compass", description: "a truth-telling device", unit_price: 690.66)
+      merchant_2.items.create!(name: "Lightsaber", description: "glows purple and chops people in half", unit_price: 515.45)
+      merchant_2.items.create!(name: "Buc-ee's Tumbler", description: "holds hot or cold liquid / 16oz", unit_price: 8.95)
+  
+      get "/api/v1/merchants?count=true"
+      
+      expect(response).to be_successful
+  
+      merchants = JSON.parse(response.body, symbolize_names: true)
+     
+      expect(merchants[:data][0][:attributes][:item_count]).to eq(1)
+      expect(merchants[:data][1][:attributes][:item_count]).to eq(2)
+    end
+  end
+  
   describe "show" do
     it "can get one merchant" do
       walmart = Merchant.create!(name: "Walmart")

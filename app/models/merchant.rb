@@ -1,10 +1,9 @@
 class Merchant < ApplicationRecord
   has_many :invoices
   has_many :items, dependent: :destroy
-  
+
   def self.sort_direction(sort)   
-    return order(created_at: :asc) if sort == 'asc'
-    return order(created_at: :desc) if sort == 'desc'
+    return order(created_at: :desc) if sort == 'age'
     return all
   end
 
