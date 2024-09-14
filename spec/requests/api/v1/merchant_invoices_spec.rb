@@ -52,7 +52,30 @@ RSpec.describe "Merchant Invoices" do
       get "/api/v1/merchants/#{walmart.id}/invoices?status=shipped"
       expect(response).to be_successful
 
+      invoices = JSON.parse(response.body, symbolize_names: true)
 
+      expect(invoices[:data].count).to eq(1)
+
+      invoices[:data].each do |invoice|
+        
+        expect(invoice).to have_key(:id)
+        expect(invoice[:id]).to be_a(String)
+
+        expect(invoice).to have_key(:type)
+        expect(invoice[:type]).to be_a(String)
+        
+        attributes = invoice[:attributes]
+        
+        expect(attributes).to have_key(:customer_id)
+        expect(attributes[:customer_id]).to be_an(Integer)
+
+        expect(attributes).to have_key(:merchant_id)
+        expect(attributes[:merchant_id]).to be_an(Integer)
+
+        expect(attributes).to have_key(:status)
+        expect(attributes[:status]).to be_a(String)
+        expect(attributes[:status]).to eq("shipped")
+      end
     end
   end
 end
