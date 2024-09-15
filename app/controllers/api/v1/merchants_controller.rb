@@ -1,7 +1,14 @@
 class Api::V1::MerchantsController < ApplicationController
+  
   def index
-    merchants = Merchant.all
-                            .sort_direction(params[:sorted])
+    merchants = if params[:status] == 'returned'
+                  Merchant.joins(:invoices).where(invoices: { status: 'returned' }).distinct
+                else
+                  Merchant.all
+                end
+
+    merchants = merchants.sort_direction(params[:sorted]) if params[:sorted]
+
     render json: MerchantsSerializer.new(merchants, params: request.query_parameters)
   end
 
