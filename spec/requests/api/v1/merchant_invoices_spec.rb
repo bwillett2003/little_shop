@@ -77,5 +77,14 @@ RSpec.describe "Merchant Invoices" do
         expect(attributes[:status]).to eq("shipped")
       end
     end
+
+    it "returns a 404 message if merchant is not found" do
+      
+      get "/api/v1/merchants/#{1234567890}/invoices"
+      expect(response).to have_http_status(404)
+
+      error_message = JSON.parse(response.body, symbolize_names: true)
+      expect(error_message[:errors][0][:message]).to eq("Merchant not found")
+    end
   end
 end

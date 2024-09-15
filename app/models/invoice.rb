@@ -9,7 +9,7 @@ class Invoice < ApplicationRecord
   validates :status, presence: true
 
   def self.filter_merchant_status(params)
-    invoices = Invoice.where(merchant_id: params[:id])
+    invoices = Invoice.where(merchant_id: params[:merchant_id])
     invoices = filter(invoices, params)
     invoices
   end
