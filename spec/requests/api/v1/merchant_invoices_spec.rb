@@ -53,9 +53,8 @@ RSpec.describe "Merchant Invoices" do
       expect(response).to be_successful
 
       invoices = JSON.parse(response.body, symbolize_names: true)
-
       expect(invoices[:data].count).to eq(1)
-
+     
       invoices[:data].each do |invoice|
         
         expect(invoice).to have_key(:id)
