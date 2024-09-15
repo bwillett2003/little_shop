@@ -7,5 +7,11 @@ class Merchant < ApplicationRecord
     return all
   end
 
+  def self.filter_returned(status)
+    return joins(:invoices).where(invoices: {status: 'returned'}).distinct if status == 'returned'
+    return all
+ 
+  end
+
   validates :name, presence: true, uniqueness: true
 end
