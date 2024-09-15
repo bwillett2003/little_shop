@@ -205,4 +205,49 @@ RSpec.describe "Items" do
       expect(error_response[:errors][0][:message]).to eq("Couldn't find Item with 'id'=#{non_existent_item_id}")
     end
   end
+
+  describe "find" do
+    it "can find an item by its name" do
+      merchant = Merchant.create!(name: "Walmart")
+
+      Item.create!(name: "Laptop", description: "A powerful laptop", unit_price: 999.99, merchant_id: merchant.id)
+      Item.create!(name: "Phone", description: "A sleek smartphone", unit_price: 499.99, merchant_id: merchant.id)
+      Item.create!(name: "Headphones", description: "Noise-canceling headphones", unit_price: 199.99, merchant_id: merchant.id)
+
+      get "/api/v1/items?name=e"
+
+      expect(response).to be_successful
+
+      items = JSON.parse(response.body, symbolize_names: true)
+      
+      expect(items[:data][0][:attributes][:name]).to be_a(String)
+      expect(items[:data][0][:attributes][:name]).to eq("Laptop")
+
+      expect(items[:data][0][:attributes][:description]).to be_a(String)
+      expect(items[:data][0][:attributes][:description]).to eq("A powerful laptop")
+
+      expect(items[:data][0][:attributes][:unit_price]).to be_a(Float)
+      expect(items[:data][0][:attributes][:unit_price]).to eq(999.99)
+
+      expect(items[:data][0][:attributes][:merchant_id]).to be_a(Integer)
+      expect(items[:data][0][:attributes][:merchant_id]).to eq(merchant.id)
+    end
+
+    it "has a sad path for not finding an item" do
+      merchant = Merchant.create!(name: "Walmart")
+
+      Item.create!(name: "Laptop", description: "A powerful laptop", unit_price: 999.99, merchant_id: merchant.id)
+      Item.create!(name: "Phone", description: "A sleek smartphone", unit_price: 499.99, merchant_id: merchant.id)
+      Item.create!(name: "Headphones", description: "Noise-canceling headphones", unit_price: 199.99, merchant_id: merchant.id)
+      
+
+      get "/api/v1/items/find?name=qweporiu"
+
+      expect(response).to be_successful
+
+      error_response = JSON.parse(response.body, symbolize_names: true)
+
+      expect(error_response[:data]).to eq({})
+    end
+  end
 end

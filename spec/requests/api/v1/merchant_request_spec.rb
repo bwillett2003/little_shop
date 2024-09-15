@@ -283,4 +283,43 @@ RSpec.describe "Merchants" do
       expect(merchant[:errors]).to include("Name can't be blank")
     end
   end
+
+  describe "find_all" do
+    it "can find all merchants with search criteria" do
+      Merchant.create!(name: "Walmart")
+      Merchant.create!(name: "Target")
+      Merchant.create!(name: "Sam's")
+
+      get "/api/v1/merchants/find_all?name=w"
+
+      expect(response).to be_successful
+
+      merchants = JSON.parse(response.body, symbolize_names: true)
+
+      expect(merchants[:data][0]).to have_key(:id)
+      expect(merchants[:data][0][:id]).to be_an(String)
+
+      expect(merchants[:data][0]).to have_key(:type)
+      expect(merchants[:data][0][:type]).to be_an(String)
+
+      attributes = merchants[:attributes]
+
+      expect(merchants[:data][0][:attributes][:name]).to be_a(String)
+      expect(merchants[:data][0][:attributes][:name]).to eq("Walmart")
+    end
+
+    it "has a sad path for not being able to find a merchant with search criteria" do
+      Merchant.create!(name: "Walmart")
+      Merchant.create!(name: "Target")
+      Merchant.create!(name: "Sam's")
+
+      get "/api/v1/merchants/find_all?name=qweproiu"
+
+      expect(response).to be_successful
+
+      error_response = JSON.parse(response.body, symbolize_names: true)
+
+      expect(error_response[:data]).to eq([])
+    end
+  end
 end
