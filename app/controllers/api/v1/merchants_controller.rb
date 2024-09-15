@@ -4,7 +4,8 @@ class Api::V1::MerchantsController < ApplicationController
     merchants = Merchant.all
                             .sort_direction(params[:sorted])
                             .filter_returned(params[:status])
-    render json: MerchantsSerializer.new(merchants, params: request.query_parameters)
+                      
+    render json: MerchantsSerializer.new(merchants, {params: {item_count: params[:count] }})
   end
 
   def show
