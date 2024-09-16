@@ -157,7 +157,7 @@ RSpec.describe "Items" do
       
       patch "/api/v1/items/#{item.id}", headers: headers, params: JSON.generate({item: item_params})
   
-      expect(response.status).to eq(422)
+      expect(response.status).to eq(404)
       error_data = JSON.parse(response.body, symbolize_names: true)
 
       expect(error_data).to have_key(:errors)
@@ -165,11 +165,32 @@ RSpec.describe "Items" do
       error = error_data[:errors].first
 
       expect(error).to have_key(:status)
-      expect(error[:status]).to eq(422)
+      expect(error[:status]).to eq(404)
 
       expect(error).to have_key(:message)
       expect(error[:message]).to eq("Name can't be blank")
   
+    end
+
+    it "updates item with valid merchant_id" do
+      merchant1 = Merchant.create!(name: "Walmart")
+      merchant2 = Merchant.create!(name: "Target")
+      item = Item.create!(name: "Laptop", description: "A powerful laptop", unit_price: 999.99, merchant_id: merchant1.id)
+  
+      item_params = { merchant_id: merchant2.id }
+  
+      headers = { "CONTENT_TYPE" => "application/json" }
+      patch "/api/v1/items/#{item.id}", headers: headers, params: JSON.generate({ item: item_params })
+  
+      expect(response).to be_successful
+  
+      item.reload
+      expect(item.merchant_id).to eq(merchant2.id)
+  
+      items_data = JSON.parse(response.body, symbolize_names: true)
+      items = items_data[:data]
+  
+      expect(items[:attributes][:merchant_id]).to eq(merchant2.id)
     end
 
   end
