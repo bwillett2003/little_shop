@@ -44,6 +44,7 @@ class Api::V1::ItemsController < ApplicationController
     end
   end
 
+
   def find
     if params[:name].present? && (params[:min_price].present? || params[:max_price].present?)
       return render json: {errors: {status: 400, message: "Can't filter on those params"}}, status: 400
@@ -70,6 +71,19 @@ class Api::V1::ItemsController < ApplicationController
     render json: {data: {}}
   end
 
+  def update
+    begin
+      item = Item.find(params[:id])
+      item.update!(item_params)
+      render json: ItemsSerializer.new(item)
+    rescue ActiveRecord::RecordNotFound => error
+      error_message = [error.message]
+      render json: error_messages(error_message, 404), status: 404
+    rescue ActiveRecord::RecordInvalid => errors
+      render json: error_messages(errors.record.errors.full_messages, 404), status: 404
+    end
+  end
+  
   private
 
   def item_params

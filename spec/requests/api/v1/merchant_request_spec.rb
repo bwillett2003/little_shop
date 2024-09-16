@@ -27,6 +27,104 @@ RSpec.describe "Merchants" do
     end
   end
 
+  describe "index sort by age" do
+    it "lists newest merchants first descending order" do
+      Merchant.create!(name: "Sam's")
+      Merchant.create!(name: "Target")
+      Merchant.create!(name: "Walmart")
+      
+      get "/api/v1/merchants?sorted=age"
+      
+      expect(response).to be_successful
+      
+      merchants = JSON.parse(response.body, symbolize_names: true)
+  
+      expect(merchants[:data].count).to eq(3)
+ 
+      expect(merchants[:data].first[:attributes][:name]).to eq("Walmart")
+      expect(merchants[:data].last[:attributes][:name]).to eq("Sam's")
+    end
+  end
+
+  describe "index item count" do
+    it "returns merchants with item_count when count is true" do
+      merchant_1 = Merchant.create!(name: "Walmart")
+      merchant_2 = Merchant.create!(name: "Target")
+  
+      merchant_1.items.create!(name: "Golden Compass", description: "a truth-telling device", unit_price: 690.66)
+      merchant_2.items.create!(name: "Lightsaber", description: "glows purple and chops people in half", unit_price: 515.45)
+      merchant_2.items.create!(name: "Buc-ee's Tumbler", description: "holds hot or cold liquid / 16oz", unit_price: 8.95)
+  
+      get "/api/v1/merchants?count=true"
+      
+      expect(response).to be_successful
+  
+      merchants = JSON.parse(response.body, symbolize_names: true)
+
+      expect(merchants[:data][0][:attributes][:item_count]).to eq(1)
+      expect(merchants[:data][1][:attributes][:item_count]).to eq(2)
+    end
+
+    it "does not include item_count when count is not true" do
+      merchant_1 = Merchant.create!(name: "Walmart")
+      merchant_2 = Merchant.create!(name: "Target")
+      
+      merchant_1.items.create!(name: "Golden Compass", description: "a truth-telling device", unit_price: 690.66)
+      
+      get "/api/v1/merchants"
+      
+      expect(response).to be_successful
+      
+      merchants = JSON.parse(response.body, symbolize_names: true)
+      
+      expect(merchants[:data][0][:attributes]).not_to have_key(:item_count)
+    
+      get "/api/v1/merchants?count=false"
+      
+      expect(response).to be_successful
+      
+      merchants = JSON.parse(response.body, symbolize_names: true)
+      
+      expect(merchants[:data][0][:attributes]).not_to have_key(:item_count)
+    end
+  end
+
+  describe "index returned" do
+    it "returns merchants with items from an invoice returned" do
+      merchant_invoice_returned = Merchant.create!(name: "Walmart")
+      merchant_invoice_not_returned = Merchant.create!(name: "Target")
+
+      customer_1 = Customer.create!(first_name: "Luke", last_name: "Skywalker")
+      customer_2 = Customer.create!(first_name: "Harry", last_name: "Potter")
+
+      Invoice.create!(merchant: merchant_invoice_returned, status: "returned", customer: customer_1)
+      Invoice.create!(merchant: merchant_invoice_not_returned, status: "paid", customer: customer_2)
+
+      get "/api/v1/merchants?status=returned"
+      
+      expect(response).to be_successful
+      
+      merchants = JSON.parse(response.body, symbolize_names: true)
+      merchant_names = merchants[:data].map {|merchant| merchant[:attributes][:name]}
+
+      expect(merchant_names).to eq([merchant_invoice_returned.name])
+      expect(merchant_names).not_to include(merchant_invoice_not_returned.name)   
+    end
+
+    it "returns empty when no merchants have returned invoices" do
+      merchant = Merchant.create!(name: "Walmart")
+      customer_1 = Customer.create!(first_name: "Luke", last_name: "Skywalker")
+
+      Invoice.create!(merchant: merchant, status: "paid", customer: customer_1)
+
+      get "/api/v1/merchants?status=returned"
+    
+      merchants = JSON.parse(response.body, symbolize_names: true)
+
+      expect(merchants[:data]).to be_empty
+    end
+  end
+
   describe "show" do
     it "can get one merchant" do
       walmart = Merchant.create!(name: "Walmart")
@@ -61,37 +159,76 @@ RSpec.describe "Merchants" do
   end
 
   describe "Update" do
-    it "update an existing merchant" do
-      
+    it "can update existing merchants" do
       merchant = Merchant.create!(name: "Walmart")
       previous_name = merchant.name
-      
-      merchant_params = {name: "Wally World"}
-      
-      headers = {"CONTENT_TYPE" => "application/json"}
-      
-      patch "/api/v1/merchants/#{merchant.id}", headers: headers, params: JSON.generate({merchant: merchant_params})
-      
-      updated_merchant = Merchant.find(merchant.id)
-
-      expect(response).to be_successful
-      
-      expect(updated_merchant.name).to_not eq(previous_name)
-      expect(updated_merchant.name).to eq("Wally World")
+      merchant_params = {merchant:{name: "Target"}}
     
-      merchants_data = JSON.parse(response.body, symbolize_names: true)
-      merchant = merchants_data[:data]
+      headers = { "CONTENT_TYPE" => "application/json" }
+      patch "/api/v1/merchants/#{merchant.id}", headers: headers, params: JSON.generate(merchant_params)
 
-      expect(merchant).to have_key(:id)
-      expect(merchant[:id]).to be_an(String)
+      updated_merchant = Merchant.find_by(id: merchant.id)
 
-      expect(merchant).to have_key(:type)
-      expect(merchant[:type]).to be_an(String)
+      expect(updated_merchant.name).to_not eq(previous_name)
+      expect(updated_merchant.name).to eq("Target")
+    
+      expect(response).to be_successful
+      merchant_data = JSON.parse(response.body, symbolize_names: true)
+      merchant_json = merchant_data[:data]
+    
+      expect(merchant_json).to have_key(:id)
+      expect(merchant_json[:id]).to eq(merchant.id.to_s)
+    
+      expect(merchant_json).to have_key(:type)
+      expect(merchant_json[:type]).to eq('merchant')
+    
+      expect(merchant_json).to have_key(:attributes)
+      expect(merchant_json[:attributes]).to have_key(:name)
+      expect(merchant_json[:attributes][:name]).to eq("Target")
+    end
 
-      attributes = merchant[:attributes]
+    it "can handle sad paths when the merchant does not exist" do
+      merchant = Merchant.create!(name: "Walmart")
+      non_existent_id = merchant.id + 1
+      merchant_params = { name: "Target" }
+    
+      headers = { "CONTENT_TYPE" => "application/json" }
+      patch "/api/v1/merchants/#{non_existent_id}", headers: headers, params: JSON.generate({ merchant: merchant_params })
+    
+      expect(response.status).to eq(404)
+    
+      error_data = JSON.parse(response.body, symbolize_names: true)
+      expect(error_data).to have_key(:errors)
+    
+      error = error_data[:errors].first
+    
+      expect(error).to have_key(:status)
+      expect(error[:status]).to eq(404)
+    
+      expect(error).to have_key(:message)
+      expect(error[:message]).to eq("Couldn't find Merchant with 'id'=#{non_existent_id}")
+    end
 
-      expect(attributes).to have_key(:name)
-      expect(attributes[:name]).to be_a(String)
+    it "can handle sad paths when the update is invalid" do
+      merchant = Merchant.create!(name: "Walmart")
+      
+      merchant_params = { name: "" }
+      headers = { "CONTENT_TYPE" => "application/json" }
+    
+      patch "/api/v1/merchants/#{merchant.id}", headers: headers, params: JSON.generate({ merchant: merchant_params })
+    
+      expect(response.status).to eq(422)
+    
+      error_data = JSON.parse(response.body, symbolize_names: true)
+      expect(error_data).to have_key(:errors)
+    
+      error = error_data[:errors].first
+    
+      expect(error).to have_key(:status)
+      expect(error[:status]).to eq(422)
+    
+      expect(error).to have_key(:message)
+      expect(error[:message]).to eq("Name can't be blank")
     end
   end
 
@@ -269,18 +406,18 @@ RSpec.describe "Merchants" do
     it "will can handle sad paths for merchants that don't exist" do
       merchant = Merchant.create!(name: "Walmart")
       previous_name = merchant.name
-    
       
       invalid_merchant = {name: ""}
       headers = {"CONTENT_TYPE" => "application/json"}
       
       patch "/api/v1/merchants/#{merchant.id}", headers: headers, params: JSON.generate({merchant: invalid_merchant})
       
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.status).to eq(422)
       
       merchant = JSON.parse(response.body, symbolize_names: true)
-      
-      expect(merchant[:errors]).to include("Name can't be blank")
+
+      expect(merchant[:errors].first[:status]).to eq(422)
+      expect(merchant[:errors].first[:message]).to eq("Name can't be blank")
     end
   end
 
