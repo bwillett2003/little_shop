@@ -27,6 +27,104 @@ RSpec.describe "Merchants" do
     end
   end
 
+  describe "index sort by age" do
+    it "lists newest merchants first descending order" do
+      Merchant.create!(name: "Sam's")
+      Merchant.create!(name: "Target")
+      Merchant.create!(name: "Walmart")
+      
+      get "/api/v1/merchants?sorted=age"
+      
+      expect(response).to be_successful
+      
+      merchants = JSON.parse(response.body, symbolize_names: true)
+  
+      expect(merchants[:data].count).to eq(3)
+ 
+      expect(merchants[:data].first[:attributes][:name]).to eq("Walmart")
+      expect(merchants[:data].last[:attributes][:name]).to eq("Sam's")
+    end
+  end
+
+  describe "index item count" do
+    it "returns merchants with item_count when count is true" do
+      merchant_1 = Merchant.create!(name: "Walmart")
+      merchant_2 = Merchant.create!(name: "Target")
+  
+      merchant_1.items.create!(name: "Golden Compass", description: "a truth-telling device", unit_price: 690.66)
+      merchant_2.items.create!(name: "Lightsaber", description: "glows purple and chops people in half", unit_price: 515.45)
+      merchant_2.items.create!(name: "Buc-ee's Tumbler", description: "holds hot or cold liquid / 16oz", unit_price: 8.95)
+  
+      get "/api/v1/merchants?count=true"
+      
+      expect(response).to be_successful
+  
+      merchants = JSON.parse(response.body, symbolize_names: true)
+
+      expect(merchants[:data][0][:attributes][:item_count]).to eq(1)
+      expect(merchants[:data][1][:attributes][:item_count]).to eq(2)
+    end
+
+    it "does not include item_count when count is not true" do
+      merchant_1 = Merchant.create!(name: "Walmart")
+      merchant_2 = Merchant.create!(name: "Target")
+      
+      merchant_1.items.create!(name: "Golden Compass", description: "a truth-telling device", unit_price: 690.66)
+      
+      get "/api/v1/merchants"
+      
+      expect(response).to be_successful
+      
+      merchants = JSON.parse(response.body, symbolize_names: true)
+      
+      expect(merchants[:data][0][:attributes]).not_to have_key(:item_count)
+    
+      get "/api/v1/merchants?count=false"
+      
+      expect(response).to be_successful
+      
+      merchants = JSON.parse(response.body, symbolize_names: true)
+      
+      expect(merchants[:data][0][:attributes]).not_to have_key(:item_count)
+    end
+  end
+
+  describe "index returned" do
+    it "returns merchants with items from an invoice returned" do
+      merchant_invoice_returned = Merchant.create!(name: "Walmart")
+      merchant_invoice_not_returned = Merchant.create!(name: "Target")
+
+      customer_1 = Customer.create!(first_name: "Luke", last_name: "Skywalker")
+      customer_2 = Customer.create!(first_name: "Harry", last_name: "Potter")
+
+      Invoice.create!(merchant: merchant_invoice_returned, status: "returned", customer: customer_1)
+      Invoice.create!(merchant: merchant_invoice_not_returned, status: "paid", customer: customer_2)
+
+      get "/api/v1/merchants?status=returned"
+      
+      expect(response).to be_successful
+      
+      merchants = JSON.parse(response.body, symbolize_names: true)
+      merchant_names = merchants[:data].map {|merchant| merchant[:attributes][:name]}
+
+      expect(merchant_names).to eq([merchant_invoice_returned.name])
+      expect(merchant_names).not_to include(merchant_invoice_not_returned.name)   
+    end
+
+    it "returns empty when no merchants have returned invoices" do
+      merchant = Merchant.create!(name: "Walmart")
+      customer_1 = Customer.create!(first_name: "Luke", last_name: "Skywalker")
+
+      Invoice.create!(merchant: merchant, status: "paid", customer: customer_1)
+
+      get "/api/v1/merchants?status=returned"
+    
+      merchants = JSON.parse(response.body, symbolize_names: true)
+
+      expect(merchants[:data]).to be_empty
+    end
+  end
+
   describe "show" do
     it "can get one merchant" do
       walmart = Merchant.create!(name: "Walmart")
