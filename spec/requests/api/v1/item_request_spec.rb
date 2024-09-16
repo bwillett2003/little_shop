@@ -240,7 +240,6 @@ RSpec.describe "Items" do
       Item.create!(name: "Phone", description: "A sleek smartphone", unit_price: 499.99, merchant_id: merchant.id)
       Item.create!(name: "Headphones", description: "Noise-canceling headphones", unit_price: 199.99, merchant_id: merchant.id)
       
-
       get "/api/v1/items/find?name=qweporiu"
 
       expect(response).to be_successful
@@ -248,6 +247,150 @@ RSpec.describe "Items" do
       error_response = JSON.parse(response.body, symbolize_names: true)
 
       expect(error_response[:data]).to eq({})
+    end
+
+    it "can find an item by a min_price" do
+      merchant = Merchant.create!(name: "Walmart")
+
+      Item.create!(name: "Laptop", description: "A powerful laptop", unit_price: 999.99, merchant_id: merchant.id)
+      Item.create!(name: "Phone", description: "A sleek smartphone", unit_price: 499.99, merchant_id: merchant.id)
+      Item.create!(name: "Headphones", description: "Noise-canceling headphones", unit_price: 199.99, merchant_id: merchant.id)
+
+      get "/api/v1/items/find?min_price=999.99"
+
+      expect(response).to be_successful
+
+      items = JSON.parse(response.body, symbolize_names: true)
+      
+      expect(items[:data][:attributes][:name]).to be_a(String)
+      expect(items[:data][:attributes][:name]).to eq("Laptop")
+
+      expect(items[:data][:attributes][:description]).to be_a(String)
+      expect(items[:data][:attributes][:description]).to eq("A powerful laptop")
+
+      expect(items[:data][:attributes][:unit_price]).to be_a(Float)
+      expect(items[:data][:attributes][:unit_price]).to eq(999.99)
+
+      expect(items[:data][:attributes][:merchant_id]).to be_a(Integer)
+      expect(items[:data][:attributes][:merchant_id]).to eq(merchant.id)
+    end
+
+    it "has a sad path for not finding an item by min_price" do
+      merchant = Merchant.create!(name: "Walmart")
+
+      Item.create!(name: "Laptop", description: "A powerful laptop", unit_price: 999.99, merchant_id: merchant.id)
+      Item.create!(name: "Phone", description: "A sleek smartphone", unit_price: 499.99, merchant_id: merchant.id)
+      Item.create!(name: "Headphones", description: "Noise-canceling headphones", unit_price: 199.99, merchant_id: merchant.id)
+      
+      get "/api/v1/items/find?min_price=10000"
+
+      expect(response).to be_successful
+
+      error_response = JSON.parse(response.body, symbolize_names: true)
+
+      expect(error_response[:data]).to eq({})
+    end
+
+    it "can find an item by a max_price" do
+      merchant = Merchant.create!(name: "Walmart")
+
+      Item.create!(name: "Laptop", description: "A powerful laptop", unit_price: 999.99, merchant_id: merchant.id)
+      Item.create!(name: "Phone", description: "A sleek smartphone", unit_price: 499.99, merchant_id: merchant.id)
+      Item.create!(name: "Headphones", description: "Noise-canceling headphones", unit_price: 199.99, merchant_id: merchant.id)
+
+      get "/api/v1/items/find?max_price=199.99"
+
+      expect(response).to be_successful
+
+      item = JSON.parse(response.body, symbolize_names: true)
+      
+      expect(item[:data][:attributes][:name]).to be_a(String)
+      expect(item[:data][:attributes][:name]).to eq("Headphones")
+
+      expect(item[:data][:attributes][:description]).to be_a(String)
+      expect(item[:data][:attributes][:description]).to eq("Noise-canceling headphones")
+
+      expect(item[:data][:attributes][:unit_price]).to be_a(Float)
+      expect(item[:data][:attributes][:unit_price]).to eq(199.99)
+
+      expect(item[:data][:attributes][:merchant_id]).to be_a(Integer)
+      expect(item[:data][:attributes][:merchant_id]).to eq(merchant.id)
+    end
+
+    it "has a sad path for not finding an item by max_price" do
+      merchant = Merchant.create!(name: "Walmart")
+
+      Item.create!(name: "Laptop", description: "A powerful laptop", unit_price: 999.99, merchant_id: merchant.id)
+      Item.create!(name: "Phone", description: "A sleek smartphone", unit_price: 499.99, merchant_id: merchant.id)
+      Item.create!(name: "Headphones", description: "Noise-canceling headphones", unit_price: 199.99, merchant_id: merchant.id)
+      
+      get "/api/v1/items/find?max_price=5"
+
+      expect(response).to be_successful
+
+      error_response = JSON.parse(response.body, symbolize_names: true)
+
+      expect(error_response[:data]).to eq({})
+    end
+
+    it "has a sad path for including both name and min_price params" do
+      merchant = Merchant.create!(name: "Walmart")
+
+      Item.create!(name: "Laptop", description: "A powerful laptop", unit_price: 999.99, merchant_id: merchant.id)
+      Item.create!(name: "Phone", description: "A sleek smartphone", unit_price: 499.99, merchant_id: merchant.id)
+      Item.create!(name: "Headphones", description: "Noise-canceling headphones", unit_price: 199.99, merchant_id: merchant.id)
+
+      get "/api/v1/items/find?name=Jose&min_price=10000"
+
+      error_response = JSON.parse(response.body, symbolize_names: true)
+      
+      expect(error_response[:errors][:status]).to eq(400)
+      expect(error_response[:errors][:message]).to eq("Can't filter on those params")
+    end
+
+    it "has a sad path for including both name and max_price params" do
+      merchant = Merchant.create!(name: "Walmart")
+
+      Item.create!(name: "Laptop", description: "A powerful laptop", unit_price: 999.99, merchant_id: merchant.id)
+      Item.create!(name: "Phone", description: "A sleek smartphone", unit_price: 499.99, merchant_id: merchant.id)
+      Item.create!(name: "Headphones", description: "Noise-canceling headphones", unit_price: 199.99, merchant_id: merchant.id)
+
+      get "/api/v1/items/find?name=Jose&max_price=10000"
+
+      error_response = JSON.parse(response.body, symbolize_names: true)
+      
+      expect(error_response[:errors][:status]).to eq(400)
+      expect(error_response[:errors][:message]).to eq("Can't filter on those params")
+    end
+
+    it "has a sad path for including name, min_price, and max_price params" do
+      merchant = Merchant.create!(name: "Walmart")
+
+      Item.create!(name: "Laptop", description: "A powerful laptop", unit_price: 999.99, merchant_id: merchant.id)
+      Item.create!(name: "Phone", description: "A sleek smartphone", unit_price: 499.99, merchant_id: merchant.id)
+      Item.create!(name: "Headphones", description: "Noise-canceling headphones", unit_price: 199.99, merchant_id: merchant.id)
+
+      get "/api/v1/items/find?name=Jose&min_price=500&max_price=10000"
+
+      error_response = JSON.parse(response.body, symbolize_names: true)
+
+      expect(error_response[:errors][:status]).to eq(400)
+      expect(error_response[:errors][:message]).to eq("Can't filter on those params")
+    end
+
+    it "has sad path for min_price query to be lower than 0 or string" do
+    merchant = Merchant.create!(name: "Walmart")
+
+      Item.create!(name: "Laptop", description: "A powerful laptop", unit_price: 999.99, merchant_id: merchant.id)
+      Item.create!(name: "Phone", description: "A sleek smartphone", unit_price: 499.99, merchant_id: merchant.id)
+      Item.create!(name: "Headphones", description: "Noise-canceling headphones", unit_price: 199.99, merchant_id: merchant.id)
+      
+      get "/api/v1/items/find?min_price=Jose"
+
+      error_response = JSON.parse(response.body, symbolize_names: true)
+
+      expect(error_response[:errors][:status]).to eq(400)
+      expect(error_response[:errors][:message]).to eq("Can't be less than 0 or a string.")
     end
   end
 end
