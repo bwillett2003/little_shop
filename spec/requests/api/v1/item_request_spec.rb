@@ -192,7 +192,7 @@ RSpec.describe "Items" do
   
       expect(items[:attributes][:merchant_id]).to eq(merchant2.id)
     end
-
+  end
   describe "create" do
     it "can create an item" do
       merchant = Merchant.create!(name: "Test Merchant")
