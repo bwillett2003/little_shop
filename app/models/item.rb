@@ -11,4 +11,19 @@ class Item < ApplicationRecord
   validates :description, presence: true
   validates :unit_price, presence: true, numericality: { only_float: true}
   validates :merchant_id, presence: true, numericality: {only_integer: true}
+
+  def self.find_by_name(param)
+    return all unless param.present?
+    return where("name ILIKE ?", "%#{param}%").first
+  end
+
+  def self.find_by_min_price(param)
+    return all unless param.present?
+    return where('unit_price >= ?', param).order(:name)
+  end
+
+  def self.find_by_max_price(param)
+    return all unless param.present?
+    return where('unit_price <= ?', param).order(:name)
+  end
 end

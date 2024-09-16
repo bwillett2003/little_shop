@@ -44,6 +44,33 @@ class Api::V1::ItemsController < ApplicationController
     end
   end
 
+
+  def find
+    if params[:name].present? && (params[:min_price].present? || params[:max_price].present?)
+      return render json: {errors: {status: 400, message: "Can't filter on those params"}}, status: 400
+    end
+
+    if params[:name].present?
+      item = Item.find_by_name(params[:name])
+    end
+    
+    if (params[:min_price].present? && params[:min_price].to_f <= 0) || (params[:max_price].present? && params[:max_price].to_f <= 0)
+      return render json: {errors: {status: 400, message: "Can't be less than 0 or a string."}}, status: 400
+    end
+
+    if (params[:min_price].present?) || (params[:max_price].present?)
+      item = Item.all
+                      .find_by_min_price(params[:min_price])
+                      .find_by_max_price(params[:max_price])
+                      .first
+    end
+
+    if item
+      return render json: ItemsSerializer.new(item)
+    end
+    render json: {data: {}}
+  end
+
   def update
     begin
       item = Item.find(params[:id])

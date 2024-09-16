@@ -24,6 +24,7 @@ class Api::V1::MerchantsController < ApplicationController
     end
   end
 
+
   def create
     begin
       merchant = Merchant.create!(merchant_params)
@@ -59,7 +60,16 @@ class Api::V1::MerchantsController < ApplicationController
       render json: error_messages(errors.record.errors.full_messages, 422), status: 422
     end
   end
- 
+
+  def find_all
+    merchant = Merchant.all
+                    .find_by_merchant_name(params[:name])
+    if merchant
+      return render json: MerchantsSerializer.new(merchant)
+    end
+    render json: {data: []}
+  end
+
   private
 
   def merchant_params
