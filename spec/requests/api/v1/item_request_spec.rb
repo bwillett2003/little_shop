@@ -89,6 +89,110 @@ RSpec.describe "Items" do
     end
   end
 
+  describe "update" do
+    it "can update existing items" do
+      merchant = Merchant.create!(name: "Walmart")
+      id = Item.create!(name: "Laptop", description: "A powerful laptop", unit_price: 999.99, merchant_id: merchant.id).id
+      previous_description = Item.last.description
+      item_params = {description: "it's not a macbook"}
+
+      headers = {"CONTENT_TYPE" => "application/json"}
+      patch "/api/v1/items/#{id}", headers: headers, params: JSON.generate({item: item_params})
+      
+      item = Item.find_by(id: id)
+      expect(item.description).to_not eq(previous_description)
+      expect(item.description).to eq("it's not a macbook")
+
+      expect(response).to be_successful
+      items_data = JSON.parse(response.body, symbolize_names: true)
+      items = items_data[:data]
+
+
+      expect(items).to have_key(:id)
+      expect(items[:id]).to eq(id.to_s)
+
+      expect(items).to have_key(:type)
+      expect(items[:type]).to eq('item')
+
+      expect(items).to have_key(:attributes)
+      expect(items[:attributes]).to have_key(:name)
+      expect(items[:attributes][:name]).to eq("Laptop")
+
+      expect(items[:attributes]).to have_key(:description)
+      expect(items[:attributes][:description]).to eq("it's not a macbook")
+
+      expect(items[:attributes]).to have_key(:unit_price)
+      expect(items[:attributes][:unit_price]).to eq(999.99)
+
+      expect(items[:attributes]).to have_key(:merchant_id)
+      expect(items[:attributes][:merchant_id]).to eq(merchant.id)
+    end
+
+    it "can handle sad path for nonexisten ids" do
+      merchant = Merchant.create!(name: "Walmart")
+      id = Item.create!(name: "Laptop", description: "A powerful laptop", unit_price: 999.99, merchant_id: merchant.id).id
+      item_params = {description: "this won't update"}
+      headers = {"CONTENT_TYPE" => "application/json"}
+
+      patch "/api/v1/items/#{id+ 1}", headers: headers, params: JSON.generate({item: item_params})
+  
+      expect(response.status).to eq(404)
+      
+      error_data = JSON.parse(response.body, symbolize_names: true)
+      expect(error_data).to have_key(:errors)
+
+      expect(error_data[:errors].first).to have_key(:status)
+      expect(error_data[:errors].first[:status]).to eq(404)
+
+      expect(error_data[:errors].first).to have_key(:message)
+      expect(error_data[:errors].first[:message]).to eq("Couldn't find Item with 'id'=#{id + 1}")
+    end
+  
+    it "can handle sad path for invalid updates" do
+      merchant = Merchant.create!(name: "Walmart")
+      item = Item.create!(name: "Laptop", description: "A powerful laptop", unit_price: 999.99, merchant_id: merchant.id)
+
+      item_params = {name: "", description: "Invalid attempt"}
+      headers = {"CONTENT_TYPE" => "application/json"}
+      
+      patch "/api/v1/items/#{item.id}", headers: headers, params: JSON.generate({item: item_params})
+  
+      expect(response.status).to eq(404)
+      error_data = JSON.parse(response.body, symbolize_names: true)
+
+      expect(error_data).to have_key(:errors)
+
+      error = error_data[:errors].first
+
+      expect(error).to have_key(:status)
+      expect(error[:status]).to eq(404)
+
+      expect(error).to have_key(:message)
+      expect(error[:message]).to eq("Name can't be blank")
+  
+    end
+
+    it "updates item with valid merchant_id" do
+      merchant1 = Merchant.create!(name: "Walmart")
+      merchant2 = Merchant.create!(name: "Target")
+      item = Item.create!(name: "Laptop", description: "A powerful laptop", unit_price: 999.99, merchant_id: merchant1.id)
+  
+      item_params = { merchant_id: merchant2.id }
+  
+      headers = { "CONTENT_TYPE" => "application/json" }
+      patch "/api/v1/items/#{item.id}", headers: headers, params: JSON.generate({ item: item_params })
+  
+      expect(response).to be_successful
+  
+      item.reload
+      expect(item.merchant_id).to eq(merchant2.id)
+  
+      items_data = JSON.parse(response.body, symbolize_names: true)
+      items = items_data[:data]
+  
+      expect(items[:attributes][:merchant_id]).to eq(merchant2.id)
+    end
+
   describe "create" do
     it "can create an item" do
       merchant = Merchant.create!(name: "Test Merchant")
@@ -204,5 +308,6 @@ RSpec.describe "Items" do
       expect(error_response[:errors][0][:status]).to eq(404)
       expect(error_response[:errors][0][:message]).to eq("Couldn't find Item with 'id'=#{non_existent_item_id}")
     end
+
   end
 end

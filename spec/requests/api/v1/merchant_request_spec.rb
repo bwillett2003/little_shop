@@ -159,37 +159,76 @@ RSpec.describe "Merchants" do
   end
 
   describe "Update" do
-    it "update an existing merchant" do
-      
+    it "can update existing merchants" do
       merchant = Merchant.create!(name: "Walmart")
       previous_name = merchant.name
-      
-      merchant_params = {name: "Wally World"}
-      
-      headers = {"CONTENT_TYPE" => "application/json"}
-      
-      patch "/api/v1/merchants/#{merchant.id}", headers: headers, params: JSON.generate({merchant: merchant_params})
-      
-      updated_merchant = Merchant.find(merchant.id)
-
-      expect(response).to be_successful
-      
-      expect(updated_merchant.name).to_not eq(previous_name)
-      expect(updated_merchant.name).to eq("Wally World")
+      merchant_params = {merchant:{name: "Target"}}
     
-      merchants_data = JSON.parse(response.body, symbolize_names: true)
-      merchant = merchants_data[:data]
+      headers = { "CONTENT_TYPE" => "application/json" }
+      patch "/api/v1/merchants/#{merchant.id}", headers: headers, params: JSON.generate(merchant_params)
 
-      expect(merchant).to have_key(:id)
-      expect(merchant[:id]).to be_an(String)
+      updated_merchant = Merchant.find_by(id: merchant.id)
 
-      expect(merchant).to have_key(:type)
-      expect(merchant[:type]).to be_an(String)
+      expect(updated_merchant.name).to_not eq(previous_name)
+      expect(updated_merchant.name).to eq("Target")
+    
+      expect(response).to be_successful
+      merchant_data = JSON.parse(response.body, symbolize_names: true)
+      merchant_json = merchant_data[:data]
+    
+      expect(merchant_json).to have_key(:id)
+      expect(merchant_json[:id]).to eq(merchant.id.to_s)
+    
+      expect(merchant_json).to have_key(:type)
+      expect(merchant_json[:type]).to eq('merchant')
+    
+      expect(merchant_json).to have_key(:attributes)
+      expect(merchant_json[:attributes]).to have_key(:name)
+      expect(merchant_json[:attributes][:name]).to eq("Target")
+    end
 
-      attributes = merchant[:attributes]
+    it "can handle sad paths when the merchant does not exist" do
+      merchant = Merchant.create!(name: "Walmart")
+      non_existent_id = merchant.id + 1
+      merchant_params = { name: "Target" }
+    
+      headers = { "CONTENT_TYPE" => "application/json" }
+      patch "/api/v1/merchants/#{non_existent_id}", headers: headers, params: JSON.generate({ merchant: merchant_params })
+    
+      expect(response.status).to eq(404)
+    
+      error_data = JSON.parse(response.body, symbolize_names: true)
+      expect(error_data).to have_key(:errors)
+    
+      error = error_data[:errors].first
+    
+      expect(error).to have_key(:status)
+      expect(error[:status]).to eq(404)
+    
+      expect(error).to have_key(:message)
+      expect(error[:message]).to eq("Couldn't find Merchant with 'id'=#{non_existent_id}")
+    end
 
-      expect(attributes).to have_key(:name)
-      expect(attributes[:name]).to be_a(String)
+    it "can handle sad paths when the update is invalid" do
+      merchant = Merchant.create!(name: "Walmart")
+      
+      merchant_params = { name: "" }
+      headers = { "CONTENT_TYPE" => "application/json" }
+    
+      patch "/api/v1/merchants/#{merchant.id}", headers: headers, params: JSON.generate({ merchant: merchant_params })
+    
+      expect(response.status).to eq(422)
+    
+      error_data = JSON.parse(response.body, symbolize_names: true)
+      expect(error_data).to have_key(:errors)
+    
+      error = error_data[:errors].first
+    
+      expect(error).to have_key(:status)
+      expect(error[:status]).to eq(422)
+    
+      expect(error).to have_key(:message)
+      expect(error[:message]).to eq("Name can't be blank")
     end
   end
 
@@ -367,18 +406,18 @@ RSpec.describe "Merchants" do
     it "will can handle sad paths for merchants that don't exist" do
       merchant = Merchant.create!(name: "Walmart")
       previous_name = merchant.name
-    
       
       invalid_merchant = {name: ""}
       headers = {"CONTENT_TYPE" => "application/json"}
       
       patch "/api/v1/merchants/#{merchant.id}", headers: headers, params: JSON.generate({merchant: invalid_merchant})
       
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.status).to eq(422)
       
       merchant = JSON.parse(response.body, symbolize_names: true)
-      
-      expect(merchant[:errors]).to include("Name can't be blank")
+
+      expect(merchant[:errors].first[:status]).to eq(422)
+      expect(merchant[:errors].first[:message]).to eq("Name can't be blank")
     end
   end
 end
