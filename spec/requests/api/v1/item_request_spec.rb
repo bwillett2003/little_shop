@@ -148,7 +148,7 @@ RSpec.describe "Items" do
       expect(error_data[:errors].first[:message]).to eq("Couldn't find Item with 'id'=#{id + 1}")
     end
   
-    it "returns a 422 when update is invalid" do
+    it "can handle sad path for invalid updates" do
       merchant = Merchant.create!(name: "Walmart")
       item = Item.create!(name: "Laptop", description: "A powerful laptop", unit_price: 999.99, merchant_id: merchant.id)
 
@@ -159,7 +159,7 @@ RSpec.describe "Items" do
   
       expect(response.status).to eq(422)
       error_data = JSON.parse(response.body, symbolize_names: true)
-      
+
       expect(error_data).to have_key(:errors)
 
       error = error_data[:errors].first

@@ -68,20 +68,13 @@ class Api::V1::MerchantsController < ApplicationController
   def update
     begin
       merchant = Merchant.find(params[:id])
-      if merchant.update(merchant_params)
-        render json: MerchantsSerializer.new(merchant)
-      else
-        render json: {errors: merchant.errors.full_messages}, status: :unprocessable_entity
-      end
-    rescue ActiveRecord::RecordNotFound
-      render json: {
-        errors: [
-          {
-            status: "404", 
-            message: "Record not found."
-          }
-        ]
-      }, status: 404
+      merchant.update!(merchant_params)
+      render json: MerchantsSerializer.new(merchant), status: 202
+    rescue ActiveRecord::RecordNotFound => error
+      error_message = [error.message]
+      render json: error_messages(error_message, 404), status: 404
+    rescue ActiveRecord::RecordInvalid => errors
+      render json: error_messages(errors.record.errors.full_messages, 422), status: 422
     end
   end
   
