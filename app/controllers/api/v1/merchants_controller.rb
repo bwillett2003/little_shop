@@ -1,7 +1,11 @@
 class Api::V1::MerchantsController < ApplicationController
+  
   def index
     merchants = Merchant.all
-    render json: MerchantsSerializer.new(merchants)
+                            .sort_direction(params[:sorted])
+                            .filter_returned(params[:status])
+                      
+    render json: MerchantsSerializer.new(merchants, {params: {item_count: params[:count] }})
   end
 
   def show
@@ -19,6 +23,7 @@ class Api::V1::MerchantsController < ApplicationController
       }, status: 404
     end
   end
+
   def create
     begin
       merchant = Merchant.create!(merchant_params)
@@ -54,15 +59,12 @@ class Api::V1::MerchantsController < ApplicationController
       render json: error_messages(errors.record.errors.full_messages, 422), status: 422
     end
   end
-  
-
-
+ 
   private
 
   def merchant_params
     params.require(:merchant).permit(:name)
   end
-
 
   def error_messages(messages, status)
     {
@@ -74,5 +76,5 @@ class Api::V1::MerchantsController < ApplicationController
       end
     }
   end
-
+  
 end

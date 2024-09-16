@@ -1,4 +1,4 @@
 class InvoicesSerializer
   include JSONAPI::Serializer
-  attributes :status
+  attributes :id, :customer_id, :merchant_id, :status
 end
