@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe "Customers" do
-  describe "get all customers for merchant" do
+  describe "Index" do
     it "return all customers for merchant id" do
       merchant_1 = Merchant.create!(name: "Sam's")
       merchant_2 = Merchant.create!(name: "Target")
@@ -27,16 +27,14 @@ RSpec.describe "Customers" do
     end
   end
 
-  describe "has a sad path for when merchant is not found" do 
-    it "test sad path" do
+    it "has a sad path for when merchant is not found" do
 
-      get "/api/v1/merchants/#{1098989898}/customers"
-    
-      expect(response).to have_http_status(404)
+    get "/api/v1/merchants/#{1098989898}/customers"
+  
+    expect(response).to have_http_status(404)
 
-      error_message = JSON.parse(response.body, symbolize_names: true)
-      expect(error_message[:errors][0][:message]).to eq("Record not found.")
-    end
+    error_message = JSON.parse(response.body, symbolize_names: true)
+    expect(error_message[:errors][0][:message]).to eq("Record not found.")
   end
 
 end
