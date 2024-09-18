@@ -32,4 +32,49 @@ RSpec.describe Item do
       expect(items.third).to eq(item1)
     end
   end
+
+  describe "find_by_name" do
+    it "can Find an item based on search criteria" do
+      merchant = Merchant.create!(name: "Walmart")
+
+      item1 = Item.create!(name: "Laptop", description: "A powerful laptop", unit_price: 999.99, merchant_id: merchant.id)
+      item2 = Item.create!(name: "Phone", description: "A sleek smartphone", unit_price: 499.99, merchant_id: merchant.id)
+      item3 = Item.create!(name: "Headphones", description: "Noise-canceling headphones", unit_price: 199.99, merchant_id: merchant.id)
+
+      found_item = Item.find_by_name("Laptop")
+
+      expect(found_item).to eq(item1)
+      expect(found_item).to_not eq(item2)
+    end
+  end
+
+  describe "find_by_min_price" do
+    it "can Find an item based on search criteria" do
+      merchant = Merchant.create!(name: "Walmart")
+
+      item1 = Item.create!(name: "Laptop", description: "A powerful laptop", unit_price: 999.99, merchant_id: merchant.id)
+      item2 = Item.create!(name: "Phone", description: "A sleek smartphone", unit_price: 499.99, merchant_id: merchant.id)
+      item3 = Item.create!(name: "Headphones", description: "Noise-canceling headphones", unit_price: 199.99, merchant_id: merchant.id)
+
+      found_item = Item.find_by_min_price(499.99)
+
+      expect(found_item).to include(item1, item2)
+      expect(found_item).to_not include(item3)
+    end
+  end
+
+  describe "find_by_max_price" do
+    it "can Find an item based on search criteria" do
+      merchant = Merchant.create!(name: "Walmart")
+
+      item1 = Item.create!(name: "Laptop", description: "A powerful laptop", unit_price: 999.99, merchant_id: merchant.id)
+      item2 = Item.create!(name: "Phone", description: "A sleek smartphone", unit_price: 499.99, merchant_id: merchant.id)
+      item3 = Item.create!(name: "Headphones", description: "Noise-canceling headphones", unit_price: 199.99, merchant_id: merchant.id)
+
+      found_item = Item.find_by_max_price(499.99)
+
+      expect(found_item).to include(item2, item3)
+      expect(found_item).to_not include(item1)
+    end
+  end
 end
