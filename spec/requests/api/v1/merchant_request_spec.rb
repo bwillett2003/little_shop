@@ -1,3 +1,4 @@
+require 'rails_helper'
 
 RSpec.describe "Merchants" do
   describe "index" do
@@ -157,7 +158,7 @@ RSpec.describe "Merchants" do
       expect(merchant[:errors][0][:message]).to eq("Record not found.")
     end
   end
-
+  
   describe "Update" do
     it "can update existing merchants" do
       merchant = Merchant.create!(name: "Walmart")
